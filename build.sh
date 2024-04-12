@@ -116,42 +116,19 @@ EOT
   }
 
 
-#   local gpf_impala2_storage_image="gpf-impala2-storage-dev"
-#   local gpf_impala2_storage_image_ref
-#   # create gpf docker image
-#   build_stage "Create gpf_impala2_storage docker image"
-#   {
-#     local gpf_dev_tag
-#     gpf_dev_tag="$(e docker_img_gpf_dev_tag)"
-#     build_docker_image_create "$gpf_impala2_storage_image" \
-#         "projects/iossifovlab.gpf.repo/impala2_storage" \
-#         "projects/iossifovlab.gpf.repo/impala2_storage/Dockerfile" \
-#         "$gpf_dev_tag"
-#     gpf_impala2_storage_image_ref="$(e docker_img_gpf_impala2_storage_dev)"
-#   }
-
-#   build_stage "Create network"
-#   {
-#     # create network
-#     local -A ctx_network
-#     build_run_ctx_init ctx:ctx_network "persistent" "network"
-#     build_run_ctx_persist ctx:ctx_network
-#   }
-
-#   # run impala
-#   build_stage "Run impala"
-#   {
-#     local -A ctx_impala
-#     build_run_ctx_init ctx:ctx_impala "persistent" "container" \
-#         "registry.seqpipe.org/seqpipe-impala4:latest" \
-#         "cmd-from-image" "no-def-mounts" \
-#         ports:21050,8020 --hostname impala --network "${ctx_network["network_id"]}"
-
-#     defer_ret build_run_ctx_reset ctx:ctx_impala
-
-#     # build_run_container ctx:ctx_impala /wait-for-it.sh -h localhost -p 21050 -t 300
-#     build_run_ctx_persist ctx:ctx_impala
-#   }
+  local gpf_gcp_storage_image="gpf-gcp-storage-dev"
+  local gpf_gcp_storage_image_ref
+  # create gpf docker image
+  build_stage "Create gpf_gcp_storage docker image"
+  {
+    local gpf_dev_tag
+    gpf_dev_tag="$(e docker_img_gpf_dev_tag)"
+    build_docker_image_create "$gpf_gcp_storage_image" \
+        "projects/iossifovlab.gpf.repo/gcp_storage" \
+        "projects/iossifovlab.gpf.repo/gcp_storage/Dockerfile" \
+        "$gpf_dev_tag"
+    gpf_gcp_storage_image_ref="$(e docker_img_gpf_gcp_storage_dev)"
+  }
 
 #   # Tests - dae
 #   build_stage "Tests - impala2_storage"
