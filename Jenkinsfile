@@ -8,6 +8,7 @@ pipeline {
     BUILD_SCRIPTS_BUILD_DOCKER_REGISTRY_USERNAME = credentials('jenkins-registry.seqpipe.org.user')
     BUILD_SCRIPTS_BUILD_DOCKER_REGISTRY_PASSWORD_FILE = credentials('jenkins-registry.seqpipe.org.passwd')
     SEQPIPE_GCP_STORAGE_TESTING=credentials('seqpipe-gcp-storage-testing')
+    TRIGGER_ONLY_BETWEEN="02:00-07:00"
   }
 
   stages {
