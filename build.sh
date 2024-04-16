@@ -181,14 +181,14 @@ EOT
 
     build_run_container cp /wd/results/gcp-storage-integration-junit.xml /wd/test-results/
 
-    # build_run_container bash -c '
-    #     project_dir="/wd/projects/iossifovlab.gpf.repo";
-    #     cd $project_dir/gcp_storage;
-    #     if [ -f ".coverage" ]; then
-    #         coverage xml;
-    #         cp -f coverage.xml /wd/test-results/;
-    #         coverage html --title "GPF impala storage" -d /wd/test-results/coverage-html;          
-    #     fi'
+    build_run_container bash -c '
+        project_dir="/wd/projects/iossifovlab.gpf.repo";
+        cd $project_dir/gcp_storage;
+        if [ -f ".coverage" ]; then
+            coverage xml;
+            cp -f coverage.xml /wd/test-results/;
+            coverage html --title "GPF impala storage" -d /wd/test-results/coverage-html;          
+        fi'
 
   }
 
