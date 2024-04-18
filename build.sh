@@ -116,101 +116,81 @@ EOT
   }
 
 
-#   local gpf_impala2_storage_image="gpf-impala2-storage-dev"
-#   local gpf_impala2_storage_image_ref
-#   # create gpf docker image
-#   build_stage "Create gpf_impala2_storage docker image"
-#   {
-#     local gpf_dev_tag
-#     gpf_dev_tag="$(e docker_img_gpf_dev_tag)"
-#     build_docker_image_create "$gpf_impala2_storage_image" \
-#         "projects/iossifovlab.gpf.repo/impala2_storage" \
-#         "projects/iossifovlab.gpf.repo/impala2_storage/Dockerfile" \
-#         "$gpf_dev_tag"
-#     gpf_impala2_storage_image_ref="$(e docker_img_gpf_impala2_storage_dev)"
-#   }
+  local gpf_gcp_storage_image="gpf-gcp-storage-dev"
+  local gpf_gcp_storage_image_ref
+  # create gpf docker image
+  build_stage "Create gpf_gcp_storage docker image"
+  {
+    local gpf_dev_tag
+    gpf_dev_tag="$(e docker_img_gpf_dev_tag)"
+    build_docker_image_create "$gpf_gcp_storage_image" \
+        "projects/iossifovlab.gpf.repo/gcp_storage" \
+        "projects/iossifovlab.gpf.repo/gcp_storage/Dockerfile" \
+        "$gpf_dev_tag"
+    gpf_gcp_storage_image_ref="$(e docker_img_gpf_gcp_storage_dev)"
+  }
 
-#   build_stage "Create network"
-#   {
-#     # create network
-#     local -A ctx_network
-#     build_run_ctx_init ctx:ctx_network "persistent" "network"
-#     build_run_ctx_persist ctx:ctx_network
-#   }
+  # Tests - GCP storage
+  build_stage "Tests - gcp_storage"
+  {
+    local project_dir
+    project_dir="/wd/projects/iossifovlab.gpf.repo"
 
-#   # run impala
-#   build_stage "Run impala"
-#   {
-#     local -A ctx_impala
-#     build_run_ctx_init ctx:ctx_impala "persistent" "container" \
-#         "registry.seqpipe.org/seqpipe-impala4:latest" \
-#         "cmd-from-image" "no-def-mounts" \
-#         ports:21050,8020 --hostname impala --network "${ctx_network["network_id"]}"
+    build_run_ctx_init "container" "${gpf_gcp_storage_image_ref}" \
+      --env DAE_DB_DIR="/wd/data/data-hg19-empty/" \
+      --env GRR_DEFINITION_FILE="/wd/cache/grr_definition.yaml"
 
-#     defer_ret build_run_ctx_reset ctx:ctx_impala
+    defer_ret build_run_ctx_reset
 
-#     # build_run_container ctx:ctx_impala /wait-for-it.sh -h localhost -p 21050 -t 300
-#     build_run_ctx_persist ctx:ctx_impala
-#   }
+    build_run_container_cp_to "/seqpipe-gcp-storage-testing.json" "${SEQPIPE_GCP_STORAGE_TESTING}"
 
-#   # Tests - dae
-#   build_stage "Tests - impala2_storage"
-#   {
-#     local project_dir
-#     project_dir="/wd/projects/iossifovlab.gpf.repo"
+    for d in $project_dir/dae $project_dir/wdae $project_dir/dae_conftests $project_dir/gcp_storage; do
+      build_run_container bash -c 'cd "'"${d}"'"; /opt/conda/bin/conda run --no-capture-output -n gpf \
+        pip install -e .'
+    done
 
-#     build_run_ctx_init "container" "${gpf_impala2_storage_image_ref}" \
-#       --network "${ctx_network["network_id"]}" \
-#       --env DAE_DB_DIR="/wd/data/data-hg19-empty/" \
-#       --env GRR_DEFINITION_FILE="/wd/cache/grr_definition.yaml" \
-#       --env DAE_HDFS_HOST="impala" \
-#       --env DAE_IMPALA_HOST="impala"
+    build_run_container bash -c '
+        gcloud auth activate-service-account --key-file=/seqpipe-gcp-storage-testing.json
+        export GOOGLE_APPLICATION_CREDENTIALS=/seqpipe-gcp-storage-testing.json
 
-#     defer_ret build_run_ctx_reset
+        project_dir="/wd/projects/iossifovlab.gpf.repo";
+        cd $project_dir/gcp_storage;
+        export PYTHONHASHSEED=0;
+        /opt/conda/bin/conda run --no-capture-output -n gpf py.test -v \
+          --durations 20 \
+          --cov-config $project_dir/coveragerc \
+          --junitxml=/wd/results/gcp-storage-junit.xml \
+          --cov gcp_storage \
+          gcp_storage/ || true'
 
-#     build_run_container scripts/wait-for-it.sh -h impala -p 21050 -t 300
+    build_run_container cp /wd/results/gcp-storage-junit.xml /wd/test-results/
 
-#     for d in $project_dir/dae $project_dir/wdae $project_dir/dae_conftests $project_dir/impala2_storage; do
-#       build_run_container bash -c 'cd "'"${d}"'"; /opt/conda/bin/conda run --no-capture-output -n gpf \
-#         pip install -e .'
-#     done
+    build_run_container bash -c '
+        gcloud auth activate-service-account --key-file=/seqpipe-gcp-storage-testing.json
+        export GOOGLE_APPLICATION_CREDENTIALS=/seqpipe-gcp-storage-testing.json
 
-#     build_run_container bash -c '
-#         project_dir="/wd/projects/iossifovlab.gpf.repo";
-#         cd $project_dir/impala2_storage;
-#         export PYTHONHASHSEED=0;
-#         /opt/conda/bin/conda run --no-capture-output -n gpf py.test -v \
-#           --durations 20 \
-#           --cov-config $project_dir/coveragerc \
-#           --junitxml=/wd/results/impala2-storage-junit.xml \
-#           --cov impala2_storage \
-#           impala2_storage/ || true'
+        project_dir="/wd/projects/iossifovlab.gpf.repo";
+        cd $project_dir/impala2_storage;
+        export PYTHONHASHSEED=0;
+        /opt/conda/bin/conda run --no-capture-output -n gpf py.test -v \
+          --durations 20 \
+          --cov-config $project_dir/coveragerc \
+          --junitxml=/wd/results/gcp-storage-integration-junit.xml \
+          --cov-append --cov gcp_storage \
+          $project_dir/dae/tests/ --gsf $project_dir/gcp_storage/gcp_storage/tests/gcp_storage.yaml || true'
 
-#     build_run_container cp /wd/results/impala2-storage-junit.xml /wd/test-results/
+    build_run_container cp /wd/results/gcp-storage-integration-junit.xml /wd/test-results/
 
-#     build_run_container bash -c '
-#         project_dir="/wd/projects/iossifovlab.gpf.repo";
-#         cd $project_dir/impala2_storage;
-#         export PYTHONHASHSEED=0;
-#         /opt/conda/bin/conda run --no-capture-output -n gpf py.test -v \
-#           --durations 20 \
-#           --cov-config $project_dir/coveragerc \
-#           --junitxml=/wd/results/impala2-storage-integration-junit.xml \
-#           --cov-append --cov impala2_storage \
-#           $project_dir/dae/tests/ --gsf $project_dir/impala2_storage/impala2_storage/tests/impala2_storage.yaml || true'
+    build_run_container bash -c '
+        project_dir="/wd/projects/iossifovlab.gpf.repo";
+        cd $project_dir/gcp_storage;
+        if [ -f ".coverage" ]; then
+            coverage xml;
+            cp -f coverage.xml /wd/test-results/;
+            coverage html --title "GPF impala storage" -d /wd/test-results/coverage-html;          
+        fi'
 
-#     build_run_container cp /wd/results/impala2-storage-integration-junit.xml /wd/test-results/
-
-#     build_run_container bash -c '
-#         project_dir="/wd/projects/iossifovlab.gpf.repo";
-#         cd $project_dir/impala2_storage;
-#         if [ -f ".coverage" ]; then
-#             coverage xml;
-#             cp -f coverage.xml /wd/test-results/;
-#             coverage html --title "GPF impala storage" -d /wd/test-results/coverage-html;          
-#         fi'
-
-#   }
+  }
 
 }
 
