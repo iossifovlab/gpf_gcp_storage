@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'piglet' }
+  agent { label 'eyoree' }
   options {
     copyArtifactPermission('/iossifovlab/*,/seqpipe/*');
     disableConcurrentBuilds()
