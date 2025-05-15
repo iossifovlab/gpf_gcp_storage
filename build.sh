@@ -144,7 +144,7 @@ EOT
 
     build_run_container_cp_to "/seqpipe-gcp-storage-testing.json" "${SEQPIPE_GCP_STORAGE_TESTING}"
 
-    for d in $project_dir/dae $project_dir/wdae $project_dir/dae_conftests $project_dir/gcp_storage; do
+    for d in $project_dir/dae $project_dir/wdae $project_dir/gcp_storage; do
       build_run_container bash -c 'cd "'"${d}"'"; /opt/conda/bin/conda run --no-capture-output -n gpf \
         pip install -e .'
     done
