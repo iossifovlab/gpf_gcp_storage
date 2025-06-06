@@ -170,14 +170,15 @@ EOT
         export GOOGLE_APPLICATION_CREDENTIALS=/seqpipe-gcp-storage-testing.json
 
         project_dir="/wd/projects/iossifovlab.gpf.repo";
-        cd $project_dir/impala2_storage;
+        cd $project_dir/gcp_storage;
         export PYTHONHASHSEED=0;
         /opt/conda/bin/conda run --no-capture-output -n gpf py.test -v \
           --durations 20 \
           --cov-config $project_dir/coveragerc \
           --junitxml=/wd/results/gcp-storage-integration-junit.xml \
           --cov-append --cov gcp_storage \
-          $project_dir/dae/tests/ --gsf $project_dir/gcp_storage/gcp_storage/tests/gcp_storage.yaml || true'
+          $project_dir/dae/tests/integration/genotype_storage/ \
+          --gsf $project_dir/gcp_storage/gcp_storage/tests/gcp_storage.yaml || true'
 
     build_run_container cp /wd/results/gcp-storage-integration-junit.xml /wd/test-results/
 
